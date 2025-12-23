@@ -11,28 +11,34 @@ fn main() {
             eprintln!("Error reading line: {e}");
         }
 
-        match input.trim() {
+        let (bin, args) = parse_input(&input);
+
+        let cmds = ["exit", "echo", "type"];
+
+        match bin {
             "exit" => return,
-            input if input.starts_with("echo") => {
-                let args = parse_args(input.trim());
+            "echo" => {
                 for arg in args {
                     print!("{arg} ");
                 }
                 println!();
+            }
+            "type" => {
+                let cmd = args[0];
+                if cmds.contains(&cmd) {
+                    println!("{cmd} is a shell builtin");
+                } else {
+                    println!("{cmd}: not found");
+                }
             }
             cmd => eprintln!("{cmd}: command not found"),
         };
     }
 }
 
-fn parse_args(input: &str) -> Vec<String> {
-    let mut v = Vec::new();
+fn parse_input(input: &str) -> (&str, Vec<&str>) {
     let mut input = input.split_whitespace();
-    input.next();
+    let bin = input.next().unwrap();
 
-    for arg in input {
-        v.push(arg.to_string());
-    }
-
-    v
+    (bin, input.collect())
 }
