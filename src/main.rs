@@ -1,5 +1,6 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
+use std::process;
 
 fn main() {
     loop {
@@ -11,6 +12,11 @@ fn main() {
             eprintln!("Error reading line: {e}");
         }
 
-        println!("{}: command not found", input.trim());
+        match input.trim() {
+            "exit" => process::exit(0),
+            _ => {
+                println!("{}: command not found", input.trim());
+            }
+        };
     }
 }
