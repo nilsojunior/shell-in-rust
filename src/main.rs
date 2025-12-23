@@ -13,7 +13,26 @@ fn main() {
 
         match input.trim() {
             "exit" => return,
+            input if input.starts_with("echo") => {
+                let args = parse_args(input.trim());
+                for arg in args {
+                    print!("{arg} ");
+                }
+                println!();
+            }
             cmd => eprintln!("{cmd}: command not found"),
         };
     }
+}
+
+fn parse_args(input: &str) -> Vec<String> {
+    let mut v = Vec::new();
+    let mut input = input.split_whitespace();
+    input.next();
+
+    for arg in input {
+        v.push(arg.to_string());
+    }
+
+    v
 }
