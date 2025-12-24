@@ -6,6 +6,7 @@ pub enum ShellError {
     NotFound(String),
     EnvVarNotSet(String),
     Utf8(String),
+    NotEnoughArgs(String),
 }
 
 impl fmt::Display for ShellError {
@@ -15,6 +16,7 @@ impl fmt::Display for ShellError {
             ShellError::NotFound(file) => write!(f, "{file}: not found"),
             ShellError::EnvVarNotSet(key) => write!(f, "{key}: is not defined in the environment"),
             ShellError::Utf8(e) => write!(f, "{e}: failed to convert to UTF-8"),
+            ShellError::NotEnoughArgs(cmd) => write!(f, "{cmd}: requires a argument"),
         }
     }
 }

@@ -4,7 +4,7 @@ use std::{os::unix::fs::PermissionsExt, path::PathBuf};
 use crate::errors::ShellError;
 
 pub fn find_executable_in_path(s: &str) -> Result<String, ShellError> {
-    const BUILTIN_COMMANDS: [&str; 3] = ["exit", "echo", "type"];
+    const BUILTIN_COMMANDS: [&str; 4] = ["exit", "echo", "type", "pwd"];
 
     if BUILTIN_COMMANDS.contains(&s) {
         return Ok(format!("{s} is a shell builtin"));
@@ -64,4 +64,8 @@ pub fn bin(bin: &str, args: &Vec<String>) -> Result<(), ShellError> {
     }
 
     Ok(())
+}
+
+pub fn pwd() -> Result<String, ShellError> {
+    Ok(env::current_dir()?.display().to_string())
 }
