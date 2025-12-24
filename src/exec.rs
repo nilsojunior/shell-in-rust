@@ -42,16 +42,9 @@ pub fn type_cmd(s: &str) -> Result<String, ShellError> {
 }
 
 fn is_executable(path: &PathBuf) -> bool {
-    let path = match path.metadata() {
-        Ok(data) => data,
-        Err(_) => return false,
-    };
-
-    if path.is_file() && path.permissions().mode() & &0o111 != 0 {
-        true
-    } else {
-        false
-    }
+    path.metadata()
+        .map(|f| f.is_file() && f.permissions().mode() & &0o111 != 0)
+        .unwrap_or(false)
 }
 
 pub fn bin(bin: &str, args: &Vec<String>) -> Result<(), ShellError> {
