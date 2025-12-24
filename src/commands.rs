@@ -1,47 +1,61 @@
-use crate::exec;
+use crate::{errors::ShellError, exec};
 
 use std::process;
 
 pub enum Command {
     Exit,
-    Echo(String),
-    Type(String),
+    Echo(Vec<String>),
+    Type(Vec<String>),
+    Bin(String, Vec<String>),
 }
 
 impl Command {
-    pub fn eval(input: &str) -> Result<Self, String> {
-        let input: Vec<&str> = input.split_whitespace().collect();
+    pub fn eval(input: &str) -> Result<Option<Self>, String> {
+        let mut input = input.split_whitespace();
 
-        match input[0] {
+        let bin = match input.next() {
+            Some(v) => v,
+            None => return Ok(None),
+        };
+
+        // Call String::from on every string
+        let args: Vec<String> = input.map(String::from).collect();
+
+        let cmd = match bin {
             "exit" => Ok(Command::Exit),
             "echo" => {
-                if input.len() < 2 {
-                    Err(format!("{}: requires a argument", input[0]))
+                if args.is_empty() {
+                    Err(format!("{bin}: requires a argument"))
                 } else {
-                    Ok(Command::Echo(input[1..].join(" ")))
+                    Ok(Command::Echo(args))
                 }
             }
             "type" => {
-                if input.len() < 2 {
-                    Err(format!("{}: requires a argument", input[0]))
+                if args.is_empty() {
+                    Err(format!("{bin}: requires a argument"))
                 } else {
-                    Ok(Command::Type(input[1].to_string()))
+                    Ok(Command::Type(args))
                 }
             }
-            _ => Err(format!("{}: command not found", input[0])),
-        }
+            _ => Ok(Command::Bin(bin.to_string(), args)),
+        };
+
+        Ok(Some(cmd?))
     }
 
-    pub fn handle(&self) -> Result<(), String> {
+    pub fn handle(&self) -> Result<(), ShellError> {
         match self {
             Command::Exit => {
                 process::exit(0);
             }
             Command::Echo(s) => {
-                println!("{s}");
+                println!("{}", s.join(" "))
             }
             Command::Type(s) => {
-                println!("{}", exec::type_cmd(s)?);
+                println!("{}", exec::find_executable_in_path(&s[0])?);
+            }
+            Command::Bin(bin, args) => {
+                exec::bin(bin, args)?;
             }
         };
 

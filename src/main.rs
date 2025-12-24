@@ -3,6 +3,7 @@ use std::io::{self, Write};
 use crate::commands::Command;
 
 mod commands;
+mod errors;
 mod exec;
 
 fn main() {
@@ -16,7 +17,8 @@ fn main() {
         }
 
         let cmd = match Command::eval(&input) {
-            Ok(v) => v,
+            Ok(Some(cmd)) => cmd,
+            Ok(None) => continue,
             Err(e) => {
                 eprintln!("{e}");
                 continue;
