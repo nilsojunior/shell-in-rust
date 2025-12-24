@@ -1,5 +1,9 @@
-#[allow(unused_imports)]
 use std::io::{self, Write};
+
+use crate::commands::Command;
+
+mod commands;
+mod exec;
 
 fn main() {
     loop {
@@ -11,34 +15,17 @@ fn main() {
             eprintln!("Error reading line: {e}");
         }
 
-        let (bin, args) = parse_input(&input);
-
-        let cmds = ["exit", "echo", "type"];
-
-        match bin {
-            "exit" => return,
-            "echo" => {
-                for arg in args {
-                    print!("{arg} ");
-                }
-                println!();
+        let cmd = match Command::eval(&input) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("{e}");
+                continue;
             }
-            "type" => {
-                let cmd = args[0];
-                if cmds.contains(&cmd) {
-                    println!("{cmd} is a shell builtin");
-                } else {
-                    println!("{cmd}: not found");
-                }
-            }
-            cmd => eprintln!("{cmd}: command not found"),
         };
+
+        match cmd.handle() {
+            Ok(s) => s,
+            Err(e) => eprintln!("{e}"),
+        }
     }
-}
-
-fn parse_input(input: &str) -> (&str, Vec<&str>) {
-    let mut input = input.split_whitespace();
-    let bin = input.next().unwrap();
-
-    (bin, input.collect())
 }
