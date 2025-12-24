@@ -8,6 +8,7 @@ pub enum Command {
     Echo(Vec<String>),
     Type(Vec<String>),
     Bin(String, Vec<String>),
+    Cd(String),
 }
 
 impl Command {
@@ -39,6 +40,13 @@ impl Command {
                 }
             }
             "pwd" => Ok(Command::Pwd()),
+            "cd" => {
+                if args.is_empty() {
+                    Err(ShellError::NotEnoughArgs(bin.to_string()))
+                } else {
+                    Ok(Command::Cd(args.iter().next().unwrap().to_string()))
+                }
+            }
 
             _ => Ok(Command::Bin(bin.to_string(), args)),
         };
@@ -61,7 +69,10 @@ impl Command {
                 exec::bin(bin, args)?;
             }
             Command::Pwd() => {
-                println!("{}", exec::pwd()?);
+                println!("{}", exec::get_current_dir()?);
+            }
+            Command::Cd(s) => {
+                exec::cd(s)?;
             }
         };
 

@@ -1,5 +1,8 @@
 use ::std::{env, ffi, process};
-use std::{os::unix::fs::PermissionsExt, path::PathBuf};
+use std::{
+    os::unix::fs::PermissionsExt,
+    path::{Path, PathBuf},
+};
 
 use crate::errors::ShellError;
 
@@ -28,7 +31,7 @@ pub fn find_executable_in_path(s: &str) -> Result<String, ShellError> {
     }
 }
 
-const BUILTIN_COMMANDS: [&str; 4] = ["exit", "echo", "type", "pwd"];
+const BUILTIN_COMMANDS: [&str; 5] = ["exit", "echo", "type", "pwd", "cd"];
 
 pub fn type_cmd(s: &str) -> Result<String, ShellError> {
     if BUILTIN_COMMANDS.contains(&s) {
@@ -52,13 +55,27 @@ fn is_executable(path: &PathBuf) -> bool {
 }
 
 pub fn bin(bin: &str, args: &Vec<String>) -> Result<(), ShellError> {
-    let bin = find_executable_in_path(bin)?;
+    find_executable_in_path(bin)?;
 
     let _ = process::Command::new(bin).args(args).spawn()?.wait();
 
     Ok(())
 }
 
-pub fn pwd() -> Result<String, ShellError> {
+pub fn get_current_dir() -> Result<String, ShellError> {
     Ok(env::current_dir()?.display().to_string())
+}
+
+pub fn cd(path: &str) -> Result<(), ShellError> {
+    let path = Path::new(path);
+
+    if path.exists() {
+        env::set_current_dir(path)?;
+        Ok(())
+    } else {
+        Err(ShellError::PathDoesNotExist(
+            "cd".to_string(),
+            path.display().to_string(),
+        ))
+    }
 }
