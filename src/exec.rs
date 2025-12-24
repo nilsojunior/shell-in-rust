@@ -4,12 +4,6 @@ use std::{os::unix::fs::PermissionsExt, path::PathBuf};
 use crate::errors::ShellError;
 
 pub fn find_executable_in_path(s: &str) -> Result<String, ShellError> {
-    const BUILTIN_COMMANDS: [&str; 4] = ["exit", "echo", "type", "pwd"];
-
-    if BUILTIN_COMMANDS.contains(&s) {
-        return Ok(format!("{s} is a shell builtin"));
-    }
-
     let bin = ffi::OsStr::new(s);
     let key = "PATH";
     let paths = env::var_os(key).ok_or_else(|| ShellError::EnvVarNotSet(key.to_string()))?;
@@ -23,7 +17,7 @@ pub fn find_executable_in_path(s: &str) -> Result<String, ShellError> {
         if is_executable(&path) {
             // We check the str before so this is safe
             // result.push_str(&format!("{s} is {}\n", path.to_str().unwrap())); // Safe unwrap
-            return Ok(format!("{s} is {}", path.to_str().unwrap()));
+            return Ok(path.to_str().unwrap().to_string());
         }
     }
 
@@ -32,6 +26,16 @@ pub fn find_executable_in_path(s: &str) -> Result<String, ShellError> {
     } else {
         Ok(result)
     }
+}
+
+const BUILTIN_COMMANDS: [&str; 4] = ["exit", "echo", "type", "pwd"];
+
+pub fn type_cmd(s: &str) -> Result<String, ShellError> {
+    if BUILTIN_COMMANDS.contains(&s) {
+        return Ok(format!("{s} is a shell builtin"));
+    }
+
+    Ok(format!("{s} is {}", find_executable_in_path(s)?))
 }
 
 fn is_executable(path: &PathBuf) -> bool {
@@ -48,20 +52,9 @@ fn is_executable(path: &PathBuf) -> bool {
 }
 
 pub fn bin(bin: &str, args: &Vec<String>) -> Result<(), ShellError> {
-    // Fix: this is a war crime
-    let bin: String = find_executable_in_path(bin)?
-        .split_whitespace()
-        .next()
-        .map(String::from)
-        .unwrap();
+    let bin = find_executable_in_path(bin)?;
 
-    let output = process::Command::new(bin).args(args).output()?;
-
-    if output.status.success() {
-        print!("{}", String::from_utf8(output.stdout)?);
-    } else {
-        eprint!("{}", String::from_utf8(output.stderr)?);
-    }
+    let _ = process::Command::new(bin).args(args).spawn()?.wait();
 
     Ok(())
 }

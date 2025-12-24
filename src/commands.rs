@@ -55,7 +55,7 @@ impl Command {
                 println!("{}", s.join(" "))
             }
             Command::Type(s) => {
-                println!("{}", exec::find_executable_in_path(&s[0])?);
+                println!("{}", exec::type_cmd(&s[0])?);
             }
             Command::Bin(bin, args) => {
                 exec::bin(bin, args)?;
