@@ -8,6 +8,7 @@ pub enum ShellError {
     Utf8(String),
     NotEnoughArgs(String),
     PathDoesNotExist(String, String),
+    HomeDirNotFound(),
 }
 
 impl fmt::Display for ShellError {
@@ -21,6 +22,7 @@ impl fmt::Display for ShellError {
             ShellError::PathDoesNotExist(cmd, path) => {
                 write!(f, "{cmd}: {path}: No such file or directory")
             }
+            ShellError::HomeDirNotFound() => write!(f, "failed to get home directory"),
         }
     }
 }

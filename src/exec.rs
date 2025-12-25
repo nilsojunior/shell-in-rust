@@ -63,23 +63,22 @@ pub fn cd(path: &str) -> Result<(), ShellError> {
     let path = Path::new(path);
 
     if path.exists() {
-        env::set_current_dir(path)?;
-        Ok(())
+        return Ok(env::set_current_dir(path)?);
     } else if path.starts_with("~") {
-        let key = "HOME";
-        let home = PathBuf::from(
-            env::var_os(key).ok_or_else(|| ShellError::EnvVarNotSet(key.to_string()))?,
-        );
+        let home = env::home_dir()
+            .ok_or_else(|| ShellError::HomeDirNotFound())?
+            .to_path_buf();
 
         // Safe because the we check before
-        let full_path = home.join(path.strip_prefix("~").unwrap());
+        let full_path = home.join(path.strip_prefix("~").unwrap()).to_path_buf();
 
-        env::set_current_dir(PathBuf::from(full_path))?;
-        Ok(())
-    } else {
-        Err(ShellError::PathDoesNotExist(
-            "cd".to_string(),
-            path.display().to_string(),
-        ))
+        if full_path.exists() {
+            return Ok(env::set_current_dir(full_path)?);
+        }
     }
+
+    Err(ShellError::PathDoesNotExist(
+        "cd".to_string(),
+        path.display().to_string(),
+    ))
 }
