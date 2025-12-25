@@ -6,7 +6,7 @@ use std::{
 
 use crate::errors::ShellError;
 
-pub fn find_executable_in_path(s: &str) -> Result<String, ShellError> {
+fn find_executable_in_path(s: &str) -> Result<String, ShellError> {
     let bin = ffi::OsStr::new(s);
     let key = "PATH";
     let paths = env::var_os(key).ok_or_else(|| ShellError::EnvVarNotSet(key.to_string()))?;
@@ -64,6 +64,17 @@ pub fn cd(path: &str) -> Result<(), ShellError> {
 
     if path.exists() {
         env::set_current_dir(path)?;
+        Ok(())
+    } else if path.starts_with("~") {
+        let key = "HOME";
+        let home = PathBuf::from(
+            env::var_os(key).ok_or_else(|| ShellError::EnvVarNotSet(key.to_string()))?,
+        );
+
+        // Safe because the we check before
+        let full_path = home.join(path.strip_prefix("~").unwrap());
+
+        env::set_current_dir(PathBuf::from(full_path))?;
         Ok(())
     } else {
         Err(ShellError::PathDoesNotExist(
