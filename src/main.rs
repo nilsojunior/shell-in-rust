@@ -6,6 +6,11 @@ mod commands;
 mod errors;
 mod exec;
 
+fn parse_args(input: &str) -> (&str, &str) {
+    let input = input.trim();
+    input.split_once(" ").unwrap_or((input, ""))
+}
+
 fn main() {
     loop {
         print!("$ ");
@@ -16,9 +21,14 @@ fn main() {
             eprintln!("Error reading line: {e}");
         }
 
-        let cmd = match Command::eval(&input) {
-            Ok(Some(cmd)) => cmd,
-            Ok(None) => continue,
+        let (bin, args) = parse_args(&input);
+
+        if bin.is_empty() {
+            continue;
+        }
+
+        let cmd = match Command::eval(&bin, &args) {
+            Ok(cmd) => cmd,
             Err(e) => {
                 eprintln!("{e}");
                 continue;

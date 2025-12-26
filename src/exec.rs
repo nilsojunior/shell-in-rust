@@ -8,8 +8,8 @@ use crate::errors::ShellError;
 
 fn find_executable_in_path(s: &str) -> Result<String, ShellError> {
     let bin = ffi::OsStr::new(s);
-    let key = "PATH";
-    let paths = env::var_os(key).ok_or_else(|| ShellError::EnvVarNotSet(key.to_string()))?;
+    let key = "PATH".to_string();
+    let paths = env::var_os(&key).ok_or_else(|| ShellError::EnvVarNotSet(key))?;
 
     let result = String::new();
 
@@ -20,7 +20,8 @@ fn find_executable_in_path(s: &str) -> Result<String, ShellError> {
         if is_executable(&path) {
             // We check the str before so this is safe
             // result.push_str(&format!("{s} is {}\n", path.to_str().unwrap())); // Safe unwrap
-            return Ok(path.to_str().unwrap().to_string());
+            // return Ok(path.to_str().unwrap().to_string());
+            return Ok(path.display().to_string());
         }
     }
 
@@ -47,10 +48,13 @@ fn is_executable(path: &PathBuf) -> bool {
         .unwrap_or(false)
 }
 
-pub fn bin(bin: &str, args: &Vec<String>) -> Result<(), ShellError> {
-    find_executable_in_path(bin)?;
+pub fn bin(bin: &str, args: &str) -> Result<(), ShellError> {
+    let mut cmd = process::Command::new(bin);
+    if !args.is_empty() {
+        cmd.args(args.split_whitespace());
+    }
 
-    let _ = process::Command::new(bin).args(args).spawn()?.wait();
+    cmd.spawn()?.wait()?;
 
     Ok(())
 }
@@ -81,4 +85,14 @@ pub fn cd(path: &str) -> Result<(), ShellError> {
         "cd".to_string(),
         path.display().to_string(),
     ))
+}
+
+pub fn echo(args: &str) {
+    let args = args.trim_matches('\'');
+    if args.starts_with("'") && args.ends_with("'") {
+        println!("{}", args);
+    } else {
+        let args: Vec<&str> = args.split_whitespace().collect();
+        println!("{}", args.join(" "));
+    }
 }

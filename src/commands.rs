@@ -2,76 +2,66 @@ use crate::{errors::ShellError, exec};
 
 use std::process;
 
+#[derive(Debug)]
 pub enum Command {
     Exit,
     Pwd(),
-    Echo(Vec<String>),
-    Type(Vec<String>),
-    Bin(String, Vec<String>),
+    Echo(String),
+    Type(String),
+    Bin(String, String),
     Cd(String),
 }
 
 impl Command {
-    pub fn eval(input: &str) -> Result<Option<Self>, ShellError> {
-        let mut input = input.split_whitespace();
-
-        let bin = match input.next() {
-            Some(v) => v,
-            None => return Ok(None),
-        };
-
-        // Call String::from on every string
-        let args: Vec<String> = input.map(String::from).collect();
-
-        let cmd = match bin {
-            "exit" => Ok(Command::Exit),
+    pub fn eval(bin: &str, args: &str) -> Result<Self, ShellError> {
+        let args = args.to_string();
+        let bin = bin.to_string();
+        match bin.as_str() {
+            "exit" => Ok(Self::Exit),
+            "pwd" => Ok(Self::Pwd()),
             "echo" => {
                 if args.is_empty() {
-                    Err(ShellError::NotEnoughArgs(bin.to_string()))
+                    Err(ShellError::NotEnoughArgs(bin))
                 } else {
-                    Ok(Command::Echo(args))
+                    Ok(Self::Echo(args))
                 }
             }
             "type" => {
                 if args.is_empty() {
-                    Err(ShellError::NotEnoughArgs(bin.to_string()))
+                    Err(ShellError::NotEnoughArgs(bin))
                 } else {
-                    Ok(Command::Type(args))
+                    Ok(Self::Type(args))
                 }
             }
-            "pwd" => Ok(Command::Pwd()),
             "cd" => {
                 if args.is_empty() {
-                    Err(ShellError::NotEnoughArgs(bin.to_string()))
+                    Err(ShellError::NotEnoughArgs(bin))
                 } else {
-                    Ok(Command::Cd(args.iter().next().unwrap().to_string()))
+                    Ok(Self::Cd(args))
                 }
             }
-
-            _ => Ok(Command::Bin(bin.to_string(), args)),
-        };
-
-        Ok(Some(cmd?))
+            _ => Ok(Self::Bin(bin, args)),
+        }
     }
 
     pub fn handle(&self) -> Result<(), ShellError> {
         match self {
-            Command::Exit => {
+            Self::Exit => {
                 process::exit(0);
             }
-            Command::Echo(s) => {
-                println!("{}", s.join(" "))
+            Self::Echo(s) => {
+                exec::echo(s);
             }
-            Command::Type(s) => {
-                println!("{}", exec::type_cmd(&s[0])?);
+            Self::Type(s) => {
+                println!("{}", exec::type_cmd(s)?);
             }
-            Command::Bin(bin, args) => {
+            Self::Bin(bin, args) => {
                 exec::bin(bin, args)?;
             }
-            Command::Pwd() => {
+            Self::Pwd() => {
                 println!("{}", exec::get_current_dir()?);
             }
-            Command::Cd(s) => {
+            Self::Cd(s) => {
                 exec::cd(s)?;
             }
         };
