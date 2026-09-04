@@ -1,0 +1,12 @@
+* Simple Shell in Rust
+Simple shell in rust following [[https://codecrafters.io/][codecrafters]] challenge.
+
+[[file:assets/demo.gif]]
+
+** Functionality
+The shell can run executables and has the following builtins commands available.
+- exit
+- echo
+- type
+- pwd
+- cd
